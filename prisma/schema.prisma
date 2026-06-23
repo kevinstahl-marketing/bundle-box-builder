@@ -32,3 +32,39 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model Builder {
+  id        String   @id @default(cuid())
+  shop      String
+  name      String
+  status    String   @default("draft")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  steps BuilderStep[]
+}
+
+model BuilderStep {
+  id        String   @id @default(cuid())
+  builderId String
+  title     String
+  position  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  builder Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  options BuilderOption[]
+}
+
+model BuilderOption {
+  id        String   @id @default(cuid())
+  stepId    String
+  title     String
+  position  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  step BuilderStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+}
