@@ -9,9 +9,7 @@ export async function loader({ request }) {
 
   const builders = await getBuilders(session.shop);
 
-  return {
-    builders,
-  };
+  return { builders };
 }
 
 export default function BuildersIndex() {
@@ -23,14 +21,18 @@ export default function BuildersIndex() {
         Create builder
       </s-button>
 
-      <s-section>
+      <s-section heading="Your builders">
         {builders.length === 0 ? (
-          <s-stack gap="base">
-            <s-text>No builders yet.</s-text>
-            <s-text color="subdued">
-              Create your first builder to start building product box flows.
-            </s-text>
-          </s-stack>
+          <s-box padding="base" borderWidth="base" borderRadius="base">
+            <s-stack gap="small">
+              <s-heading>No builders yet</s-heading>
+              <s-text color="subdued">
+                Create your first build-a-box flow. You’ll add products, rules,
+                progress steps, and storefront settings from the builder editor.
+              </s-text>
+              <s-button href="/app/builders/new">Create builder</s-button>
+            </s-stack>
+          </s-box>
         ) : (
           <s-stack gap="base">
             {builders.map((builder) => (
@@ -41,16 +43,31 @@ export default function BuildersIndex() {
                 borderRadius="base"
                 padding="base"
               >
-                <s-stack gap="small-100">
-                  <s-text variant="headingMd">{builder.name}</s-text>
+                <s-stack gap="small">
+                  <s-heading>{builder.name}</s-heading>
+
                   <s-text color="subdued">
-                    Status: {builder.status}
+                    Status: {builder.status ?? "draft"}
+                  </s-text>
+
+                  <s-text color="subdued">
+                    Click to edit this builder.
                   </s-text>
                 </s-stack>
               </s-clickable>
             ))}
           </s-stack>
         )}
+      </s-section>
+
+      <s-section slot="aside" heading="Builder flow">
+        <s-unordered-list>
+          <s-list-item>Create builder</s-list-item>
+          <s-list-item>Add selectable products</s-list-item>
+          <s-list-item>Set min/max rules</s-list-item>
+          <s-list-item>Style progress/loading UI</s-list-item>
+          <s-list-item>Publish to storefront</s-list-item>
+        </s-unordered-list>
       </s-section>
     </s-page>
   );

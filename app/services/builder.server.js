@@ -15,9 +15,9 @@ export async function getBuilders(shop) {
 /**
  * Get a single builder by ID.
  */
-export async function getBuilder(id) {
+export async function getBuilder(id, shop) {
   return prisma.builder.findUnique({
-    where: { id },
+    where: { id, shop, },
     include: {
       steps: {
         orderBy: {
