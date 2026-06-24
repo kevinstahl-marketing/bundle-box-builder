@@ -33,13 +33,25 @@ model Session {
   refreshTokenExpires DateTime?
 }
 
+enum BuilderMode {
+  BUILD_YOUR_OWN
+  MIX_AND_MATCH
+  FIXED_BUNDLE
+}
+
 model Builder {
   id        String   @id @default(cuid())
   shop      String
   name      String
+  mode      BuilderMode @default(BUILD_YOUR_OWN)
   status    String   @default("draft")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  productId    String?
+  productTitle String?
+  productHandle String?
+  productImage String?
 
   steps BuilderStep[]
 }
@@ -50,7 +62,13 @@ model BuilderStep {
   title     String
   position  Int
 
+  minSelections Int @default(1)
+  maxSelections Int @default(1)
+
+  isRequired Boolean @default(true)
+  isVisible   Boolean @default(true)
   createdAt DateTime @default(now())
+
   updatedAt DateTime @updatedAt
 
   builder Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
@@ -62,6 +80,16 @@ model BuilderOption {
   stepId    String
   title     String
   position  Int
+
+  type      String   @default("PRODUCT") // PRODUCT or CUSTOM
+
+  productId      String?
+  variantId      String?
+  productTitle   String?
+  variantTitle   String?
+  image          String?
+
+  priceAdjustment Int? // stored in cents
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
