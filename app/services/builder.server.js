@@ -36,6 +36,21 @@ export async function getBuilder(id, shop) {
 }
 
 /**
+ * Attach a product to a Builder. 
+ */
+export async function attachBuilderProduct(id, shop, product) {
+  return prisma.builder.update({
+    where: { id, shop },
+    data: {
+      productId: product.id,
+      productTitle: product.title,
+      productHandle: product.handle,
+      productImage: product.image,
+    },
+  });
+}
+
+/**
  * Create a new builder.
  */
 
