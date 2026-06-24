@@ -17,7 +17,7 @@ export async function getBuilders(shop) {
  */
 export async function getBuilder(id, shop) {
   return prisma.builder.findUnique({
-    where: { id, shop, },
+    where: { id, shop },
     include: {
       steps: {
         orderBy: {
@@ -38,11 +38,14 @@ export async function getBuilder(id, shop) {
 /**
  * Create a new builder.
  */
-export async function createBuilder({ shop, name }) {
+
+export async function createBuilder({ shop, name, mode }) {
   return prisma.builder.create({
     data: {
       shop,
       name,
+      mode,
+      steps: getStarterSteps(mode),
     },
   });
 }
@@ -65,3 +68,30 @@ export async function deleteBuilder(id) {
     where: { id },
   });
 }
+
+function getStarterSteps(mode) {
+  if (mode === "MIX_AND_MATCH") {
+    return {
+      create: [
+        {
+          title: "Choose your items",
+          position: 1,
+        },
+      ],
+    };
+  }
+
+  if (mode === "FIXED_BUNDLE") {
+    return {
+      create: [
+        {
+          title: "Included products",
+          position: 1,
+        },
+      ],
+    };
+  }
+
+  return undefined;
+}
+

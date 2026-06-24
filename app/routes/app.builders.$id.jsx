@@ -28,31 +28,33 @@ export async function loader({ request, params }) {
   };
 }
 
-export async function action({ request, params }) {
+export async function action({ request }) {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
-  console.log("ACTION HIT", params.id);
-  if (params.id === "new") {
-    const name = String(formData.get("name") || "").trim();
 
-    if (!name) {
-      return {
-        errors: {
-          name: "Builder name is required.",
-        },
-      };
-    }
+  const name = String(formData.get("name") || "").trim();
+  const mode = String(formData.get("mode") || "BUILD_YOUR_OWN");
 
-    const builder = await createBuilder({
-      shop: session.shop,
-      name: formData.get("name"),
-      status: "draft",
-    });
-
-    return redirect(`/app/builders/${builder.id}`);
+  if (!name) {
+    return Response.json(
+      { error: "Builder name is required" },
+      { status: 400 },
+    );
   }
 
-  return null;
+  const allowedModes = ["BUILD_YOUR_OWN", "MIX_AND_MATCH", "FIXED_BUNDLE"];
+
+  if (!allowedModes.includes(mode)) {
+    return Response.json({ error: "Invalid builder mode" }, { status: 400 });
+  }
+
+  const builder = await createBuilder({
+    shop: session.shop,
+    name,
+    mode,
+  });
+
+  return redirect(`/app/builders/${builder.id}`);
 }
 
 export default function BuilderRoute() {
@@ -84,25 +86,33 @@ function NewBuilderPage() {
               placeholder="Example: Holiday Gift Box"
             />
 
-            <s-box padding="base" borderWidth="base" borderRadius="base">
-              <s-stack gap="small">
-                <s-heading>What happens next?</s-heading>
-                <s-text color="subdued">
-                  After creating this builder, you’ll add products, selection
-                  rules, progress/loading UI, and storefront settings.
-                </s-text>
-              </s-stack>
-            </s-box>
+            <s-section>
+              <s-choice-list
+                label="How will customers build this bundle?"
+                name="mode"
+                value="BUILD_YOUR_OWN"
+              >
+                <s-choice value="BUILD_YOUR_OWN">
+                  Customers choose from categories
+                </s-choice>
 
-            <s-button
-              variant="primary"
-              onClick={() => {
-                const form = document.getElementById("new-builder-form");
-                submit(form);
-              }}
-            >
-              Create builder
-            </s-button>
+                <s-choice value="MIX_AND_MATCH">
+                  Customers choose any products
+                </s-choice>
+
+                <s-choice value="FIXED_BUNDLE">Customers don't choose</s-choice>
+              </s-choice-list>
+
+              <s-button
+                variant="primary"
+                onClick={() => {
+                  const form = document.getElementById("new-builder-form");
+                  submit(form);
+                }}
+              >
+                Create builder
+              </s-button>
+            </s-section>
           </s-stack>
         </Form>
       </s-section>
@@ -146,6 +156,11 @@ function BuilderEditor({ builder }) {
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
               <s-heading>{builder.name}</s-heading>
+
+              <s-text color="subdued">
+                Mode: {getModeLabel(builder.mode)}
+              </s-text>
+
               <s-text color="subdued">
                 Status: {builder.status ?? "draft"}
               </s-text>
@@ -159,9 +174,7 @@ function BuilderEditor({ builder }) {
                 Choose the Shopify products customers can pick from.
               </s-text>
 
-              <s-button onClick={selectProducts}>
-                Select products
-              </s-button>
+              <s-button onClick={selectProducts}>Select products</s-button>
 
               {selectedProducts.length > 0 && (
                 <s-stack gap="small">
@@ -197,3 +210,10 @@ function BuilderEditor({ builder }) {
 export const headers = (headersArgs) => {
   return boundary.headers(headersArgs);
 };
+
+function getModeLabel(mode) {
+  if (mode === "BUILD_YOUR_OWN") return "Customers choose from categories";
+  if (mode === "MIX_AND_MATCH") return "Customers choose any products";
+  if (mode === "FIXED_BUNDLE") return "Customers don't choose";
+  return "Unknown mode";
+}
