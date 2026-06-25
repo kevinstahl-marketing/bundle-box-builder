@@ -106,7 +106,63 @@ function getStarterSteps(mode) {
       ],
     };
   }
-
   return undefined;
+}
+
+export async function addBuilderStep({ builderId, shop, title }) {
+   console.log("addBuilderStep()");
+  const builder = await prisma.builder.findFirst({
+    where: {
+      id: builderId,
+      shop,
+    },
+    include: {
+      steps: true,
+    },
+  });
+
+  if (!builder) {
+    throw new Response("Builder not found", { status: 404 });
+  }
+
+  return prisma.builderStep.create({
+    data: {
+      builderId,
+      title,
+      position: builder.steps.length,
+      minSelections: 0,
+      maxSelections: null,
+    },
+  });
+}
+
+export async function updateBuilderStepRules({
+  stepId,
+  shop,
+  minSelections,
+  maxSelections,
+}) {
+  const step = await prisma.builderStep.findFirst({
+    where: {
+      id: stepId,
+      builder: {
+        shop,
+      },
+    },
+  });
+
+  if (!step) {
+    throw new Response("Step not found", { status: 404 });
+  }
+
+  return prisma.builderStep.update({
+    where: {
+      id: stepId,
+    },
+    data: {
+      minSelections,
+      maxSelections,
+    },
+  });
 }
 

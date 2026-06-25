@@ -1,3 +1,6 @@
+import { useSubmit } from "react-router";
+
+
 export default function NewBuilderPage() {
   const submit = useSubmit();
   return (
@@ -5,7 +8,7 @@ export default function NewBuilderPage() {
       {" "}
       <s-section heading="Builder basics">
         {" "}
-        <Form method="post" id="new-builder-form">
+        <form method="post" id="new-builder-form">
           {" "}
           <s-stack gap="base">
             {" "}
@@ -46,7 +49,7 @@ export default function NewBuilderPage() {
               </s-button>{" "}
             </s-section>{" "}
           </s-stack>{" "}
-        </Form>{" "}
+        </form>{" "}
       </s-section>{" "}
       <s-section slot="aside" heading="Builder setup">
         {" "}

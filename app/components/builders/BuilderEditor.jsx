@@ -1,7 +1,9 @@
 import { useSubmit } from "react-router";
 import BuilderSummaryCard from "./BuilderSummaryCard";
 import AttachedProductCard from "./AttachedProductCard";
-import BuilderRulesCard from "./BuilderRulesCard";
+import BuilderStepsCard from "./BuilderStepsCard"
+
+
 
 export default function BuilderEditor({ builder }) {
   const submit = useSubmit();
@@ -32,7 +34,7 @@ export default function BuilderEditor({ builder }) {
       <s-stack gap="base">
         <BuilderSummaryCard builder={builder} />
         <AttachedProductCard builder={builder} onAttachProduct={attachProduct} />
-        <BuilderRulesCard />
+        <BuilderStepsCard builder={builder} />
       </s-stack>
     </s-section>
   );

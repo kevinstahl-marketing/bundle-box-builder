@@ -8,14 +8,14 @@ import {
   createBuilder,
   getBuilder,
   attachBuilderProduct,
-  
+  addBuilderStep,
+  updateBuilderStepRules,
 } from "../services/builder.server";
 
 import { BUILDER_MODES } from "../services/builderMode";
 
 import NewBuilderPage from "../components/builders/NewBuilderPage";
 import BuilderEditor from "../components/builders/BuilderEditor";
-import BuilderSummaryCard from "../components/builders/BuilderSummaryCard";
 
 export async function loader({ request, params }) {
   const { session } = await authenticate.admin(request);
@@ -37,39 +37,23 @@ export async function action({ request, params }) {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
 
+  console.log("=== ACTION FIRED ===");
   const intent = String(formData.get("intent") || "");
 
-  if (intent === "attach-product") {
-    const product = {
-      id: String(formData.get("productId") || ""),
-      title: String(formData.get("productTitle") || ""),
-      handle: String(formData.get("productHandle") || ""),
-      image: String(formData.get("productImage") || ""),
-    };
+  switch (intent) {
+    case "attach-product":
+      return handleAttachProduct(params, session, formData);
 
-    await attachBuilderProduct(params.id, session.shop, product);
+    case "addStep":
+      console.log("hello lol");
+      return handleAddStep(params, session, formData);
 
-    return redirect(`/app/builders/${params.id}`);
+    case "updateStepRules":
+      return handleUpdateStepRules(params, session, formData);
+
+    default:
+      return handleCreateBuilder(session, formData);
   }
-
-  const name = String(formData.get("name") || "").trim();
-  const mode = String(formData.get("mode") || "BUILD_YOUR_OWN");
-
-  if (!name) {
-    return Response.json({ error: "Builder name is required" }, { status: 400 });
-  }
-
-  if (!BUILDER_MODES.includes(mode)) {
-    return Response.json({ error: "Invalid builder mode" }, { status: 400 });
-  }
-
-  const builder = await createBuilder({
-    shop: session.shop,
-    name,
-    mode,
-  });
-
-  return redirect(`/app/builders/${builder.id}`);
 }
 
 export default function BuilderRoute() {
@@ -90,3 +74,72 @@ export default function BuilderRoute() {
 export const headers = (headersArgs) => {
   return boundary.headers(headersArgs);
 };
+
+async function handleAttachProduct(params, session, formData) {
+  const product = {
+    id: String(formData.get("productId") || ""),
+    title: String(formData.get("productTitle") || ""),
+    handle: String(formData.get("productHandle") || ""),
+    image: String(formData.get("productImage") || ""),
+  };
+
+  await attachBuilderProduct(params.id, session.shop, product);
+
+  return redirect(`/app/builders/${params.id}`);
+}
+
+async function handleAddStep(params, session, formData) {
+  const title = String(formData.get("title") || "").trim();
+  console.log("handleAddStep");
+  await addBuilderStep({
+    builderId: params.id,
+    shop: session.shop,
+    title,
+  });
+
+  return redirect(`/app/builders/${params.id}`);
+}
+
+async function handleCreateBuilder(session, formData) {
+  const name = String(formData.get("name") || "").trim();
+  const mode = String(formData.get("mode") || "BUILD_YOUR_OWN");
+
+  if (!name) {
+    return Response.json(
+      { error: "Builder name is required" },
+      { status: 400 },
+    );
+  }
+
+  if (!BUILDER_MODES.includes(mode)) {
+    return Response.json({ error: "Invalid builder mode" }, { status: 400 });
+  }
+
+  const builder = await createBuilder({
+    shop: session.shop,
+    name,
+    mode,
+  });
+
+  return redirect(`/app/builders/${builder.id}`);
+}
+
+async function handleUpdateStepRules(params, session, formData) {
+  const stepId = String(formData.get("stepId") || "");
+  const minSelections = Number(formData.get("minSelections") || 0);
+
+  const rawMaxSelections = formData.get("maxSelections");
+  const maxSelections =
+    rawMaxSelections === "" || rawMaxSelections == null
+      ? null
+      : Number(rawMaxSelections);
+
+  await updateBuilderStepRules({
+    stepId,
+    shop: session.shop,
+    minSelections,
+    maxSelections,
+  });
+
+  return redirect(`/app/builders/${params.id}`);
+}

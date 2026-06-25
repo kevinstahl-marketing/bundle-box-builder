@@ -14,21 +14,21 @@ datasource db {
 }
 
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
@@ -40,54 +40,59 @@ enum BuilderMode {
 }
 
 model Builder {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   shop      String
   name      String
   mode      BuilderMode @default(BUILD_YOUR_OWN)
-  status    String   @default("draft")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    String      @default("draft")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  productId    String?
-  productTitle String?
+  productId     String?
+  productTitle  String?
   productHandle String?
-  productImage String?
+  productImage  String?
+
+  ruleType        String @default("NONE")
+  minSelections   Int?
+  maxSelections   Int?
+  exactSelections Int?
 
   steps BuilderStep[]
 }
 
 model BuilderStep {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   builderId String
   title     String
   position  Int
 
-  minSelections Int @default(1)
-  maxSelections Int @default(1)
+  minSelections Int  @default(0)
+  maxSelections Int?
 
-  isRequired Boolean @default(true)
-  isVisible   Boolean @default(true)
-  createdAt DateTime @default(now())
+  isRequired Boolean  @default(true)
+  isVisible  Boolean  @default(true)
+  createdAt  DateTime @default(now())
 
   updatedAt DateTime @updatedAt
 
-  builder Builder @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  builder Builder         @relation(fields: [builderId], references: [id], onDelete: Cascade)
   options BuilderOption[]
 }
 
 model BuilderOption {
-  id        String   @id @default(cuid())
-  stepId    String
-  title     String
-  position  Int
+  id       String @id @default(cuid())
+  stepId   String
+  title    String
+  position Int
 
-  type      String   @default("PRODUCT") // PRODUCT or CUSTOM
+  type String @default("PRODUCT") // PRODUCT or CUSTOM
 
-  productId      String?
-  variantId      String?
-  productTitle   String?
-  variantTitle   String?
-  image          String?
+  productId    String?
+  variantId    String?
+  productTitle String?
+  variantTitle String?
+  image        String?
 
   priceAdjustment Int? // stored in cents
 
