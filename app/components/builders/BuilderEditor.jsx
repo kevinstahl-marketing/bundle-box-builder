@@ -1,12 +1,11 @@
-import { useSubmit } from "react-router";
+import { useState } from "react";
+
 import BuilderSummaryCard from "./BuilderSummaryCard";
 import AttachedProductCard from "./AttachedProductCard";
-import BuilderStepsCard from "./BuilderStepsCard"
-
-
+import BuilderStepsCard from "./BuilderStepsCard";
 
 export default function BuilderEditor({ builder }) {
-  const submit = useSubmit();
+  const [draft, setDraft] = useState(builder);
 
   async function attachProduct() {
     const products = await window.shopify.resourcePicker({
@@ -15,26 +14,61 @@ export default function BuilderEditor({ builder }) {
       multiple: false,
     });
 
-    if (!products || products.length === 0) return;
+    if (!products?.length) return;
 
     const product = products[0];
 
-    const formData = new FormData();
-    formData.append("intent", "attach-product");
-    formData.append("productId", product.id);
-    formData.append("productTitle", product.title);
-    formData.append("productHandle", product.handle || "");
-    formData.append("productImage", product.images?.[0]?.originalSrc || "");
+    setDraft((current) => ({
+      ...current,
+      product: {
+        id: product.id,
+        title: product.title,
+        handle: product.handle || "",
+        image: product.images?.[0]?.originalSrc || "",
+      },
+    }));
+  }
 
-    submit(formData, { method: "post" });
+  function addStep(title) {
+    setDraft((builder) => ({
+      ...builder,
+      steps: [
+        ...(builder.steps ?? []),
+        {
+          id: crypto.randomUUID(),
+          title,
+          minSelections: 0,
+          maxSelections: null,
+          options: [],
+        },
+      ],
+    }));
+  }
+
+  function updateStep(stepId, changes) {
+    setDraft((builder) => ({
+      ...builder,
+      steps: (builder.steps ?? []).map((step) =>
+        step.id === stepId ? { ...step, ...changes } : step
+      ),
+    }));
   }
 
   return (
     <s-section heading="Builder editor">
       <s-stack gap="base">
-        <BuilderSummaryCard builder={builder} />
-        <AttachedProductCard builder={builder} onAttachProduct={attachProduct} />
-        <BuilderStepsCard builder={builder} />
+        <BuilderSummaryCard builder={draft} />
+
+        <AttachedProductCard
+          builder={draft}
+          onAttachProduct={attachProduct}
+        />
+
+        <BuilderStepsCard
+          builder={draft}
+          updateStep={updateStep}
+          addStep={addStep}
+        />
       </s-stack>
     </s-section>
   );

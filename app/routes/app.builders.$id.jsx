@@ -45,7 +45,6 @@ export async function action({ request, params }) {
       return handleAttachProduct(params, session, formData);
 
     case "addStep":
-      console.log("hello lol");
       return handleAddStep(params, session, formData);
 
     case "updateStepRules":

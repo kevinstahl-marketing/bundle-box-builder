@@ -1,12 +1,13 @@
-import { Form } from "react-router";
+import { useState } from "react";
 
-export default function BuilderStepsCard({ builder }) {
+export default function BuilderStepsCard({ builder, addStep, updateStep }) {
   const steps = builder.steps ?? [];
 
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
       <s-stack gap="base">
         <s-heading>Steps</s-heading>
+
         {steps.length === 0 ? (
           <s-text color="subdued">
             No steps yet. Add a step like “Choose snacks” or “Choose a drink.”
@@ -22,42 +23,78 @@ export default function BuilderStepsCard({ builder }) {
               >
                 <s-stack gap="small">
                   <s-heading>{step.title}</s-heading>
+
                   <s-text color="subdued">{getStepRuleLabel(step)}</s-text>
 
-                  <BuilderStepRuleForm step={step} />
+                  <BuilderStepRuleFields step={step} updateStep={updateStep} />
                 </s-stack>
               </s-box>
             ))}
           </s-stack>
         )}
-        <AddBuilderStepForm />{" "}
+
+        <AddBuilderStepField addStep={addStep} />
       </s-stack>
     </s-box>
   );
 }
 
-export function BuilderStepRuleForm({ step }) {
+export function BuilderStepRuleFields({ step, updateStep }) {
   return (
-    <Form method="post">
-      <input type="hidden" name="intent" value="updateStepRules" />
-      <input type="hidden" name="stepId" value={step.id} />
+    <s-stack gap="small">
+      <s-number-field
+        label="Minimum selections"
+        value={step.minSelections ?? 0}
+        min={0}
+        onInput={(e) =>
+          updateStep(step.id, {
+            minSelections: Number(e.target.value),
+          })
+        }
+      />
 
-      <s-stack gap="small">
-        <s-number-field
-          label="Minimum selections"
-          name="minSelections"
-          value={step.minSelections ?? 0}
-          min={0}
-        />
-        <s-number-field
-          label="Maximum selections"
-          name="maxSelections"
-          value={step.maxSelections ?? ""}
-          min={0}
-        />
-        <s-button type="submit">Save rules</s-button>
-      </s-stack>
-    </Form>
+      <s-number-field
+        label="Maximum selections"
+        value={step.maxSelections ?? ""}
+        min={0}
+        onInput={(e) =>
+          updateStep(step.id, {
+            maxSelections:
+              e.target.value === "" ? null : Number(e.target.value),
+          })
+        }
+      />
+    </s-stack>
+  );
+}
+
+function AddBuilderStepField({ addStep }) {
+
+  const [title, setTitle] = useState("");
+
+  function handleAddStep() {
+    const cleanTitle = title.trim();
+      console.log("ADDING STEP:", cleanTitle);
+
+    if (!cleanTitle) return;
+
+    addStep(cleanTitle);
+    setTitle("");
+  }
+
+  return (
+    <s-stack gap="small">
+      <s-text-field
+        label="Step title"
+        value={title}
+        placeholder="Choose snacks"
+        onInput={(e) => setTitle(e.target.value)}
+      />
+
+      <s-button variant="primary" onClick={handleAddStep}>
+        Add step
+      </s-button>
+    </s-stack>
   );
 }
 
@@ -69,25 +106,4 @@ function getStepRuleLabel(step) {
   if (min === max) return `Choose exactly ${min}`;
   if (min === 0) return `Choose up to ${max}`;
   return `Choose ${min} to ${max}`;
-}
-
-function AddBuilderStepForm() {
-  return (
-    <Form method="post">
-      <input type="hidden" name="intent" value="addStep" />
-
-      <s-stack gap="small">
-        <s-text-field
-          label="Step title"
-          name="title"
-          placeholder="Choose snacks"
-          required
-        />
-
-        <s-button type="submit" variant="primary">
-          Add step
-        </s-button>
-      </s-stack>
-    </Form>
-  );
 }
