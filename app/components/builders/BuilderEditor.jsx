@@ -8,6 +8,7 @@ export default function BuilderEditor({ builder }) {
   const [draft, setDraft] = useState(builder);
 
   async function attachProduct() {
+    console.log("sup");
     const products = await window.shopify.resourcePicker({
       type: "product",
       action: "select",
@@ -20,12 +21,11 @@ export default function BuilderEditor({ builder }) {
 
     setDraft((current) => ({
       ...current,
-      product: {
-        id: product.id,
-        title: product.title,
-        handle: product.handle || "",
-        image: product.images?.[0]?.originalSrc || "",
-      },
+
+      productId: product.id,
+      productTitle: product.title,
+      productHandle: product.handle || "",
+      productImage: product.images?.[0]?.originalSrc || "",
     }));
   }
 
@@ -49,7 +49,7 @@ export default function BuilderEditor({ builder }) {
     setDraft((builder) => ({
       ...builder,
       steps: (builder.steps ?? []).map((step) =>
-        step.id === stepId ? { ...step, ...changes } : step
+        step.id === stepId ? { ...step, ...changes } : step,
       ),
     }));
   }
@@ -59,10 +59,7 @@ export default function BuilderEditor({ builder }) {
       <s-stack gap="base">
         <BuilderSummaryCard builder={draft} />
 
-        <AttachedProductCard
-          builder={draft}
-          onAttachProduct={attachProduct}
-        />
+        <AttachedProductCard builder={draft} onAttachProduct={attachProduct} />
 
         <BuilderStepsCard
           builder={draft}
