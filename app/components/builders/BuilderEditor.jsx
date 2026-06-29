@@ -1,14 +1,55 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSubmit } from "react-router";
 
 import BuilderSummaryCard from "./BuilderSummaryCard";
 import AttachedProductCard from "./AttachedProductCard";
 import BuilderStepsCard from "./BuilderStepsCard";
 
 export default function BuilderEditor({ builder }) {
+  const [initialDraft, setInitialDraft] = useState(builder);
   const [draft, setDraft] = useState(builder);
 
+  const submit = useSubmit();
+  const saveBarRef = useRef(null);
+
+  const isDirty =
+    JSON.stringify(draft) !== JSON.stringify(initialDraft);
+
+  useEffect(() => {
+    const saveBar = saveBarRef.current;
+    if (!saveBar) return;
+
+    if (isDirty) {
+      saveBar.show();
+    } else {
+      saveBar.hide();
+    }
+  }, [isDirty]);
+
+  useEffect(() => {
+    setInitialDraft(builder);
+    setDraft(builder);
+  }, [builder]);
+
+  function saveBuilder(e) {
+    e?.preventDefault();
+
+    submit(
+      {
+        intent: "saveBuilder",
+        builder: JSON.stringify(draft),
+      },
+      { method: "post" },
+    );
+  }
+
+  function discardChanges(e) {
+    e?.preventDefault();
+    setDraft(initialDraft);
+    saveBarRef.current?.hide();
+  }
+
   async function attachProduct() {
-    console.log("sup");
     const products = await window.shopify.resourcePicker({
       type: "product",
       action: "select",
@@ -21,7 +62,6 @@ export default function BuilderEditor({ builder }) {
 
     setDraft((current) => ({
       ...current,
-
       productId: product.id,
       productTitle: product.title,
       productHandle: product.handle || "",
@@ -55,18 +95,28 @@ export default function BuilderEditor({ builder }) {
   }
 
   return (
-    <s-section heading="Builder editor">
-      <s-stack gap="base">
-        <BuilderSummaryCard builder={draft} />
+    <>
+      <ui-save-bar ref={saveBarRef} id="builder-editor-save-bar">
+        <button variant="primary" onClick={saveBuilder}></button>
+        <button onClick={discardChanges}></button>
+      </ui-save-bar>
 
-        <AttachedProductCard builder={draft} onAttachProduct={attachProduct} />
+      <s-section heading="Builder editor">
+        <s-stack gap="base">
+          <BuilderSummaryCard builder={draft} />
 
-        <BuilderStepsCard
-          builder={draft}
-          updateStep={updateStep}
-          addStep={addStep}
-        />
-      </s-stack>
-    </s-section>
+          <AttachedProductCard
+            builder={draft}
+            onAttachProduct={attachProduct}
+          />
+
+          <BuilderStepsCard
+            builder={draft}
+            updateStep={updateStep}
+            addStep={addStep}
+          />
+        </s-stack>
+      </s-section>
+    </>
   );
 }

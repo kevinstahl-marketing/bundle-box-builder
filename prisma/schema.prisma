@@ -59,6 +59,8 @@ model Builder {
   exactSelections Int?
 
   steps BuilderStep[]
+
+  @@unique([id, shop])
 }
 
 model BuilderStep {

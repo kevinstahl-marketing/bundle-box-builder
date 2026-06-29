@@ -1,5 +1,54 @@
 import prisma from "../db.server";
 
+
+
+export async function saveBuilderDraft({ shop, builder }) {
+  return prisma.$transaction(async (tx) => {
+    await tx.builder.update({
+      where: {
+          id: builder.id,
+          shop,
+        },
+      data: {
+        name: builder.name,
+        mode: builder.mode,
+        status: builder.status,
+
+        productId: builder.productId || null,
+        productTitle: builder.productTitle || null,
+        productHandle: builder.productHandle || null,
+        productImage: builder.productImage || null,
+
+        ruleType: builder.ruleType || "NONE",
+        minSelections: builder.minSelections ?? null,
+        maxSelections: builder.maxSelections ?? null,
+        exactSelections: builder.exactSelections ?? null,
+      },
+    });
+
+    await tx.builderStep.deleteMany({
+      where: { builderId: builder.id },
+    });
+
+    for (const [index, step] of (builder.steps ?? []).entries()) {
+      await tx.builderStep.create({
+        data: {
+          builderId: builder.id,
+          title: step.title,
+          position: index,
+          minSelections: Number(step.minSelections ?? 0),
+          maxSelections:
+            step.maxSelections === "" || step.maxSelections == null
+              ? null
+              : Number(step.maxSelections),
+          isRequired: step.isRequired ?? true,
+          isVisible: step.isVisible ?? true,
+        },
+      });
+    }
+  });
+}
+
 /**
  * Get all builders for a shop.
  */
@@ -11,6 +60,8 @@ export async function getBuilders(shop) {
     },
   });
 }
+
+
 
 /**
  * Get a single builder by ID.
