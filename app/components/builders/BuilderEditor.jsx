@@ -12,8 +12,7 @@ export default function BuilderEditor({ builder }) {
   const submit = useSubmit();
   const saveBarRef = useRef(null);
 
-  const isDirty =
-    JSON.stringify(draft) !== JSON.stringify(initialDraft);
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(initialDraft);
 
   useEffect(() => {
     const saveBar = saveBarRef.current;
@@ -37,7 +36,7 @@ export default function BuilderEditor({ builder }) {
     submit(
       {
         intent: "saveBuilder",
-        builder: JSON.stringify(draft),
+        builder: JSON.stringify(stripTempIds(draft)),
       },
       { method: "post" },
     );
@@ -75,13 +74,84 @@ export default function BuilderEditor({ builder }) {
       steps: [
         ...(builder.steps ?? []),
         {
-          id: crypto.randomUUID(),
+          id: `temp-${crypto.randomUUID()}`,
           title,
+          position: builder.steps?.length ?? 0,
           minSelections: 0,
           maxSelections: null,
+          isRequired: true,
+          isVisible: true,
           options: [],
         },
       ],
+    }));
+  }
+
+  function addOption(stepId, title) {
+    setDraft((builder) => ({
+      ...builder,
+      steps: (builder.steps ?? []).map((step) => {
+        if (step.id !== stepId) return step;
+
+        const options = step.options ?? [];
+
+        return {
+          ...step,
+          options: [
+            ...options,
+            {
+              id: `temp-${crypto.randomUUID()}`,
+              stepId,
+              title,
+              position: options.length,
+              type: "PRODUCT",
+              productId: null,
+              variantId: null,
+              productTitle: null,
+              variantTitle: null,
+              image: null,
+              priceAdjustment: null,
+            },
+          ],
+        };
+      }),
+    }));
+  }
+
+  async function attachOptionProduct(stepId, optionId) {
+    const products = await window.shopify.resourcePicker({
+      type: "product",
+      action: "select",
+      multiple: false,
+    });
+
+    if (!products?.length) return;
+
+    const product = products[0];
+    const variant = product.variants?.[0];
+
+    setDraft((builder) => ({
+      ...builder,
+      steps: (builder.steps ?? []).map((step) => {
+        if (step.id !== stepId) return step;
+
+        return {
+          ...step,
+          options: (step.options ?? []).map((option) =>
+            option.id === optionId
+              ? {
+                  ...option,
+                  type: "PRODUCT",
+                  productId: product.id,
+                  variantId: variant?.id ?? null,
+                  productTitle: product.title,
+                  variantTitle: variant?.title ?? null,
+                  image: product.images?.[0]?.originalSrc ?? null,
+                }
+              : option,
+          ),
+        };
+      }),
     }));
   }
 
@@ -114,9 +184,29 @@ export default function BuilderEditor({ builder }) {
             builder={draft}
             updateStep={updateStep}
             addStep={addStep}
+            addOption={addOption}
+            attachOptionProduct={attachOptionProduct}
           />
         </s-stack>
       </s-section>
     </>
   );
+}
+
+function isTempId(id) {
+  return typeof id === "string" && id.startsWith("temp-");
+}
+
+function stripTempIds(builder) {
+  return {
+    ...builder,
+    steps: (builder.steps ?? []).map((step) => ({
+      ...step,
+      id: isTempId(step.id) ? undefined : step.id,
+      options: (step.options ?? []).map((option) => ({
+        ...option,
+        id: isTempId(option.id) ? undefined : option.id,
+      })),
+    })),
+  };
 }

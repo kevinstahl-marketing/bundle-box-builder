@@ -1,6 +1,7 @@
 import { useState } from "react";
+import BuilderStepItem from "./BuilderStepItem";
 
-export default function BuilderStepsCard({ builder, addStep, updateStep }) {
+export default function BuilderStepsCard({ builder, addStep, updateStep, addOption, attachOptionProduct }) {
   const steps = builder.steps ?? [];
 
   return (
@@ -15,20 +16,13 @@ export default function BuilderStepsCard({ builder, addStep, updateStep }) {
         ) : (
           <s-stack gap="small">
             {steps.map((step) => (
-              <s-box
+              <BuilderStepItem
                 key={step.id}
-                padding="base"
-                borderWidth="base"
-                borderRadius="base"
-              >
-                <s-stack gap="small">
-                  <s-heading>{step.title}</s-heading>
-
-                  <s-text color="subdued">{getStepRuleLabel(step)}</s-text>
-
-                  <BuilderStepRuleFields step={step} updateStep={updateStep} />
-                </s-stack>
-              </s-box>
+                step={step}
+                updateStep={updateStep}
+                addOption={addOption}
+                attachOptionProduct={attachOptionProduct}
+              />
             ))}
           </s-stack>
         )}
@@ -39,43 +33,11 @@ export default function BuilderStepsCard({ builder, addStep, updateStep }) {
   );
 }
 
-export function BuilderStepRuleFields({ step, updateStep }) {
-  return (
-    <s-stack gap="small">
-      <s-number-field
-        label="Minimum selections"
-        value={step.minSelections ?? 0}
-        min={0}
-        onInput={(e) =>
-          updateStep(step.id, {
-            minSelections: Number(e.target.value),
-          })
-        }
-      />
-
-      <s-number-field
-        label="Maximum selections"
-        value={step.maxSelections ?? ""}
-        min={0}
-        onInput={(e) =>
-          updateStep(step.id, {
-            maxSelections:
-              e.target.value === "" ? null : Number(e.target.value),
-          })
-        }
-      />
-    </s-stack>
-  );
-}
-
 function AddBuilderStepField({ addStep }) {
-
   const [title, setTitle] = useState("");
 
   function handleAddStep() {
     const cleanTitle = title.trim();
-      console.log("ADDING STEP:", cleanTitle);
-
     if (!cleanTitle) return;
 
     addStep(cleanTitle);
@@ -96,14 +58,4 @@ function AddBuilderStepField({ addStep }) {
       </s-button>
     </s-stack>
   );
-}
-
-function getStepRuleLabel(step) {
-  const min = step.minSelections ?? 0;
-  const max = step.maxSelections;
-
-  if (max == null) return `Choose at least ${min}`;
-  if (min === max) return `Choose exactly ${min}`;
-  if (min === 0) return `Choose up to ${max}`;
-  return `Choose ${min} to ${max}`;
 }
