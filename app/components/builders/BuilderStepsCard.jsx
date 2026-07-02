@@ -1,7 +1,7 @@
 import { useState } from "react";
 import BuilderStepItem from "./BuilderStepItem";
 
-export default function BuilderStepsCard({ builder, addStep, updateStep, addOption, attachOptionProduct }) {
+export default function BuilderStepsCard({ builder, addStep, updateStep, addCustomOptionsToStep, addProductsToStep, removeOptionFromStep }) {
   const steps = builder.steps ?? [];
 
   return (
@@ -20,8 +20,9 @@ export default function BuilderStepsCard({ builder, addStep, updateStep, addOpti
                 key={step.id}
                 step={step}
                 updateStep={updateStep}
-                addOption={addOption}
-                attachOptionProduct={attachOptionProduct}
+                addCustomOptionsToStep={addCustomOptionsToStep}
+                addProductsToStep={addProductsToStep}
+                removeOptionFromStep={removeOptionFromStep}
               />
             ))}
           </s-stack>

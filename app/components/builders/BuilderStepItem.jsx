@@ -1,7 +1,15 @@
 import BuilderStepRuleFields from "./BuilderStepRuleFields";
 import BuilderStepOptionsList from "./BuilderStepOptionsList";
+import BuilderStepProductPicker from "./BuilderStepProductPicker";
+import BuilderStepCustomPicker from "./BuilderStepCustomPicker";
 
-export default function BuilderStepItem({ step, updateStep, addOption, attachOptionProduct }) {
+export default function BuilderStepItem({
+  step,
+  updateStep,
+  addCustomOptionsToStep,
+  addProductsToStep,
+  removeOptionFromStep,
+}) {
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
       <s-stack gap="small">
@@ -10,7 +18,21 @@ export default function BuilderStepItem({ step, updateStep, addOption, attachOpt
         <s-text color="subdued">{getStepRuleLabel(step)}</s-text>
 
         <BuilderStepRuleFields step={step} updateStep={updateStep} />
-        <BuilderStepOptionsList step={step} addOption={addOption} attachOptionProduct={attachOptionProduct}/>
+
+        <BuilderStepProductPicker
+          step={step}
+          addProductsToStep={addProductsToStep}
+          removeOptionFromStep={removeOptionFromStep}
+        />
+        <BuilderStepCustomPicker
+          step={step}
+          addCustomOptionsToStep={addCustomOptionsToStep}
+        />
+
+        <BuilderStepOptionsList
+          step={step}
+          removeOptionFromStep={removeOptionFromStep}
+        />
       </s-stack>
     </s-box>
   );

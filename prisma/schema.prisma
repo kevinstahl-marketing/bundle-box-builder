@@ -88,7 +88,7 @@ model BuilderOption {
   title    String
   position Int
 
-  type String @default("PRODUCT") // PRODUCT or CUSTOM
+  type BuilderOptionType @default(PRODUCT)
 
   productId    String?
   variantId    String?
@@ -96,10 +96,15 @@ model BuilderOption {
   variantTitle String?
   image        String?
 
-  priceAdjustment Int? // stored in cents
+  priceAdjustment Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   step BuilderStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+}
+
+enum BuilderOptionType {
+  PRODUCT
+  CUSTOM
 }

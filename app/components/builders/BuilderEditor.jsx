@@ -87,7 +87,7 @@ export default function BuilderEditor({ builder }) {
     }));
   }
 
-  function addOption(stepId, title) {
+  function addCustomOptionsToStep(stepId, title) {
     setDraft((builder) => ({
       ...builder,
       steps: (builder.steps ?? []).map((step) => {
@@ -104,7 +104,7 @@ export default function BuilderEditor({ builder }) {
               stepId,
               title,
               position: options.length,
-              type: "PRODUCT",
+              type: "CUSTOM",
               productId: null,
               variantId: null,
               productTitle: null,
@@ -118,42 +118,53 @@ export default function BuilderEditor({ builder }) {
     }));
   }
 
-  async function attachOptionProduct(stepId, optionId) {
-    const products = await window.shopify.resourcePicker({
-      type: "product",
-      action: "select",
-      multiple: false,
-    });
-
-    if (!products?.length) return;
-
-    const product = products[0];
-    const variant = product.variants?.[0];
-
-    setDraft((builder) => ({
-      ...builder,
-      steps: (builder.steps ?? []).map((step) => {
+  function addProductsToStep(stepId, products) {
+    setDraft((currentBuilder) => ({
+      ...currentBuilder,
+      steps: currentBuilder.steps.map((step) => {
         if (step.id !== stepId) return step;
+
+        const existingOptions = step.options ?? [];
+
+        const newOptions = products.map((product, index) => ({
+          id: `temp-${crypto.randomUUID()}`,
+          stepId,
+          title: product.title,
+          position: existingOptions.length + index,
+          type: "PRODUCT",
+
+          productId: product.id,
+          variantId: product.variantId ?? null,
+          productTitle: product.title,
+          variantTitle: product.variantTitle ?? null,
+          image: product.image ?? null,
+
+          priceAdjustment: null,
+        }));
 
         return {
           ...step,
-          options: (step.options ?? []).map((option) =>
-            option.id === optionId
-              ? {
-                  ...option,
-                  type: "PRODUCT",
-                  productId: product.id,
-                  variantId: variant?.id ?? null,
-                  productTitle: product.title,
-                  variantTitle: variant?.title ?? null,
-                  image: product.images?.[0]?.originalSrc ?? null,
-                }
-              : option,
-          ),
+          options: [...existingOptions, ...newOptions],
         };
       }),
     }));
   }
+
+  function removeOptionFromStep(stepId, optionId) {
+  setDraft((builder) => ({
+    ...builder,
+    steps: (builder.steps ?? []).map((step) => {
+      if (step.id !== stepId) return step;
+
+      return {
+        ...step,
+        options: (step.options ?? []).filter(
+          (option) => option.id !== optionId,
+        ),
+      };
+    }),
+  }));
+}
 
   function updateStep(stepId, changes) {
     setDraft((builder) => ({
@@ -184,8 +195,9 @@ export default function BuilderEditor({ builder }) {
             builder={draft}
             updateStep={updateStep}
             addStep={addStep}
-            addOption={addOption}
-            attachOptionProduct={attachOptionProduct}
+            addCustomOptionsToStep={addCustomOptionsToStep}
+            addProductsToStep={addProductsToStep}
+            removeOptionFromStep={removeOptionFromStep}
           />
         </s-stack>
       </s-section>
