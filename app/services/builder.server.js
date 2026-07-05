@@ -1,6 +1,11 @@
 import prisma from "../db.server";
 
-export async function saveBuilderDraft({ shop, builder }) {
+export async function saveBuilderDraft({ shop, builder, admin }) {
+  const resolvedOptionsByStepId = await resolveStepOptionsByStepId({
+    admin,
+    steps: builder.steps ?? [],
+  });
+
   return prisma.$transaction(async (tx) => {
     await tx.builder.update({
       where: {
@@ -10,7 +15,7 @@ export async function saveBuilderDraft({ shop, builder }) {
       data: {
         name: builder.name,
         mode: builder.mode,
-        status: builder.status,
+        status: builder.status || "draft",
 
         productId: builder.productId || null,
         productTitle: builder.productTitle || null,
@@ -27,14 +32,71 @@ export async function saveBuilderDraft({ shop, builder }) {
     await syncBuilderSteps(tx, {
       builderId: builder.id,
       steps: builder.steps ?? [],
+      resolvedOptionsByStepId,
     });
   });
 }
 
-async function syncBuilderSteps(tx, { builderId, steps }) {
-  const existingStepIds = steps
-    .map((step) => step.id)
-    .filter(Boolean);
+async function resolveStepOptionsByStepId({ admin, steps }) {
+  const resolvedOptionsByStepId = {};
+
+  if (!admin) return resolvedOptionsByStepId;
+
+  for (const step of steps) {
+    const resolvedOptions = await resolveStepOptions(admin, step);
+
+    if (resolvedOptions) {
+      resolvedOptionsByStepId[step.id] = resolvedOptions;
+    }
+  }
+
+  return resolvedOptionsByStepId;
+}
+
+async function resolveStepOptions(admin, step) {
+  if (!step.sourceType) return null;
+
+  if (step.sourceType === "TAG" && step.sourceValue) {
+    const products = await getProductsByTag(admin, step.sourceValue);
+    return mapProductsToOptions(products);
+  }
+
+  if (step.sourceType === "COLLECTION" && step.sourceValue) {
+    const products = await getProductsByCollection(admin, step.sourceValue);
+    return mapProductsToOptions(products);
+  }
+
+  if (step.sourceType === "ALL_PRODUCTS") {
+    const products = await getAllProducts(admin);
+    return mapProductsToOptions(products);
+  }
+
+  return null;
+}
+
+function mapProductsToOptions(products) {
+  return products.map((product, index) => ({
+    title: product.title,
+    position: index,
+    type: "PRODUCT",
+
+    productId: product.id,
+    variantId: null,
+
+    productTitle: product.title,
+    variantTitle: null,
+
+    image: product.featuredImage?.url ?? null,
+    priceAdjustment: null,
+  }));
+}
+
+async function syncBuilderSteps(tx, {
+  builderId,
+  steps,
+  resolvedOptionsByStepId,
+}) {
+  const existingStepIds = steps.map((step) => step.id).filter(Boolean);
 
   await tx.builderStep.deleteMany({
     where: {
@@ -56,6 +118,8 @@ async function syncBuilderSteps(tx, { builderId, steps }) {
           : Number(step.maxSelections),
       isRequired: step.isRequired ?? true,
       isVisible: step.isVisible ?? true,
+      sourceType: step.sourceType ?? "SPECIFIC_PRODUCTS",
+      sourceValue: step.sourceValue || null,
     };
 
     const savedStep = step.id
@@ -70,17 +134,17 @@ async function syncBuilderSteps(tx, { builderId, steps }) {
           },
         });
 
+    const resolvedOptions = resolvedOptionsByStepId?.[step.id];
+
     await syncBuilderOptions(tx, {
       stepId: savedStep.id,
-      options: step.options ?? [],
+      options: resolvedOptions ?? step.options ?? [],
     });
   }
 }
 
 async function syncBuilderOptions(tx, { stepId, options }) {
-  const existingOptionIds = options
-    .map((option) => option.id)
-    .filter(Boolean);
+  const existingOptionIds = options.map((option) => option.id).filter(Boolean);
 
   await tx.builderOption.deleteMany({
     where: {
@@ -93,8 +157,8 @@ async function syncBuilderOptions(tx, { stepId, options }) {
 
   for (const [index, option] of options.entries()) {
     const optionData = {
-      title: option.title,
-      position: index,
+      title: option.title || option.productTitle || "Untitled option",
+      position: option.position ?? index,
       type: option.type ?? "PRODUCT",
 
       productId: option.productId || null,
@@ -125,9 +189,72 @@ async function syncBuilderOptions(tx, { stepId, options }) {
   }
 }
 
-/**
- * Get all builders for a shop.
- */
+async function getProductsByTag(admin, tag) {
+  return getProductsByQuery(admin, `tag:${JSON.stringify(tag)}`);
+}
+
+async function getAllProducts(admin) {
+  return getProductsByQuery(admin, "");
+}
+
+async function getProductsByQuery(admin, query) {
+  const response = await admin.graphql(
+    `#graphql
+    query Products($query: String) {
+      products(first: 50, query: $query) {
+        nodes {
+          id
+          title
+          handle
+          featuredImage {
+            url
+            altText
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        query,
+      },
+    },
+  );
+
+  const payload = await response.json();
+
+  return payload.data?.products?.nodes ?? [];
+}
+
+async function getProductsByCollection(admin, collectionId) {
+  const response = await admin.graphql(
+    `#graphql
+    query CollectionProducts($id: ID!) {
+      collection(id: $id) {
+        products(first: 50) {
+          nodes {
+            id
+            title
+            handle
+            featuredImage {
+              url
+              altText
+            }
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        id: collectionId,
+      },
+    },
+  );
+
+  const payload = await response.json();
+
+  return payload.data?.collection?.products?.nodes ?? [];
+}
+
 export async function getBuilders(shop) {
   return prisma.builder.findMany({
     where: { shop },
@@ -137,9 +264,6 @@ export async function getBuilders(shop) {
   });
 }
 
-/**
- * Get a single builder by ID.
- */
 export async function getBuilder(id, shop) {
   return prisma.builder.findUnique({
     where: { id, shop },
@@ -160,9 +284,6 @@ export async function getBuilder(id, shop) {
   });
 }
 
-/**
- * Attach a product to a Builder.
- */
 export async function attachBuilderProduct(id, shop, product) {
   return prisma.builder.update({
     where: { id, shop },
@@ -175,10 +296,6 @@ export async function attachBuilderProduct(id, shop, product) {
   });
 }
 
-/**
- * Create a new builder.
- */
-
 export async function createBuilder({ shop, name, mode }) {
   return prisma.builder.create({
     data: {
@@ -190,9 +307,6 @@ export async function createBuilder({ shop, name, mode }) {
   });
 }
 
-/**
- * Update a builder.
- */
 export async function updateBuilder(id, data) {
   return prisma.builder.update({
     where: { id },
@@ -200,42 +314,13 @@ export async function updateBuilder(id, data) {
   });
 }
 
-/**
- * Delete a builder.
- */
 export async function deleteBuilder(id) {
   return prisma.builder.delete({
     where: { id },
   });
 }
 
-function getStarterSteps(mode) {
-  if (mode === "MIX_AND_MATCH") {
-    return {
-      create: [
-        {
-          title: "Choose your items",
-          position: 1,
-        },
-      ],
-    };
-  }
-
-  if (mode === "FIXED_BUNDLE") {
-    return {
-      create: [
-        {
-          title: "Included products",
-          position: 1,
-        },
-      ],
-    };
-  }
-  return undefined;
-}
-
 export async function addBuilderStep({ builderId, shop, title }) {
-  console.log("addBuilderStep()");
   const builder = await prisma.builder.findFirst({
     where: {
       id: builderId,
@@ -289,4 +374,30 @@ export async function updateBuilderStepRules({
       maxSelections,
     },
   });
+}
+
+function getStarterSteps(mode) {
+  if (mode === "MIX_AND_MATCH") {
+    return {
+      create: [
+        {
+          title: "Choose your items",
+          position: 0,
+        },
+      ],
+    };
+  }
+
+  if (mode === "FIXED_BUNDLE") {
+    return {
+      create: [
+        {
+          title: "Included products",
+          position: 0,
+        },
+      ],
+    };
+  }
+
+  return undefined;
 }

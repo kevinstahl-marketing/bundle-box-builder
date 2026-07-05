@@ -14,7 +14,7 @@ import NewBuilderPage from "../components/builders/NewBuilderPage";
 import BuilderEditor from "../components/builders/BuilderEditor";
 
 export async function loader({ request, params }) {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
 
   if (params.id === "new") {
     return { mode: "new", builder: null };
@@ -30,7 +30,7 @@ export async function loader({ request, params }) {
 }
 
 export async function action({ request, params }) {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
 
   const intent = String(formData.get("intent") || "");
@@ -41,6 +41,7 @@ export async function action({ request, params }) {
     await saveBuilderDraft({
       shop: session.shop,
       builder,
+      admin,
     });
 
     return redirect(`/app/builders/${params.id}`);

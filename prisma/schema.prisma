@@ -39,6 +39,14 @@ enum BuilderMode {
   FIXED_BUNDLE
 }
 
+enum BuilderStepSourceType {
+  SPECIFIC_PRODUCTS
+  COLLECTION
+  ALL_PRODUCTS
+  TAG
+  VENDOR
+}
+
 model Builder {
   id        String      @id @default(cuid())
   shop      String
@@ -77,6 +85,9 @@ model BuilderStep {
   createdAt  DateTime @default(now())
 
   updatedAt DateTime @updatedAt
+
+  sourceType  BuilderStepSourceType @default(SPECIFIC_PRODUCTS)
+  sourceValue String?
 
   builder Builder         @relation(fields: [builderId], references: [id], onDelete: Cascade)
   options BuilderOption[]
