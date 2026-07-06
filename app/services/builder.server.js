@@ -91,11 +91,10 @@ function mapProductsToOptions(products) {
   }));
 }
 
-async function syncBuilderSteps(tx, {
-  builderId,
-  steps,
-  resolvedOptionsByStepId,
-}) {
+async function syncBuilderSteps(
+  tx,
+  { builderId, steps, resolvedOptionsByStepId },
+) {
   const existingStepIds = steps.map((step) => step.id).filter(Boolean);
 
   await tx.builderStep.deleteMany({
