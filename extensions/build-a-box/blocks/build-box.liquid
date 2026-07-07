@@ -1,14 +1,13 @@
-<div class="bab-root">
-  <h3>Build a Box</h3>
-  <p>Theme app extension is working.</p>
+<div id="build-a-box-root">
+  Loading Build a Box...
 </div>
+
+{{ 'build-box.js' | asset_url | script_tag }}
 
 {% schema %}
 {
   "name": "Build a Box",
   "target": "section",
-  "stylesheet": "build-box.css",
-  "javascript": "build-box.js",
   "settings": []
 }
 {% endschema %}
