@@ -9,29 +9,32 @@ name = "bundle-box-builder"
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
-[product.metafields.app.demo_info]
+[metaobjects.app.build_a_box_builder]
+name = "Build a Box Builder"
+access.admin = "merchant_read"
+access.storefront = "public_read"
+
+[metaobjects.app.build_a_box_builder.fields.name]
+name = "Name"
 type = "single_line_text_field"
-name = "Demo Source Info"
-description = "Tracks products created by the Shopify app template for development"
 
-  [product.metafields.app.demo_info.access]
-  admin = "merchant_read_write"
-
-[metaobjects.app.example]
-name = "Example"
-description = "An example metaobject definition created by this template"
-
-  [metaobjects.app.example.access]
-  admin = "merchant_read_write"
-
-[metaobjects.app.example.fields.title]
-name = "Title"
+[metaobjects.app.build_a_box_builder.fields.builder_id]
+name = "Builder ID"
 type = "single_line_text_field"
-required = true
 
-[metaobjects.app.example.fields.description]
-name = "Description"
-type = "multi_line_text_field"
+[metaobjects.app.build_a_box_builder.fields.status]
+name = "Status"
+type = "single_line_text_field"
+
+[metaobjects.app.build_a_box_builder.fields.thumbnail]
+name = "Thumbnail"
+type = "file_reference"
+
+[product.metafields.app.build_a_box_builder]
+name = "Build a Box Builder"
+description = "The Build a Box builder attached to this product."
+type = "metaobject_reference<$app:build_a_box_builder>"
+
 
 [webhooks]
 api_version = "2026-07"

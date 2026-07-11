@@ -1,4 +1,6 @@
 import prisma from "../db.server";
+import { syncBuilderMetaobject } from "./builderMetaobject.server";
+import { syncBuilderProductMetafield } from "./builderProductMetafield.server";
 
 export async function saveBuilderDraft({ shop, builder, admin }) {
   const resolvedOptionsByStepId = await resolveStepOptionsByStepId({
@@ -6,7 +8,7 @@ export async function saveBuilderDraft({ shop, builder, admin }) {
     steps: builder.steps ?? [],
   });
 
-  return prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     await tx.builder.update({
       where: {
         id: builder.id,
@@ -35,6 +37,8 @@ export async function saveBuilderDraft({ shop, builder, admin }) {
       resolvedOptionsByStepId,
     });
   });
+
+  return getBuilder(builder.id, shop);
 }
 
 async function resolveStepOptionsByStepId({ admin, steps }) {
@@ -399,4 +403,36 @@ function getStarterSteps(mode) {
   }
 
   return undefined;
+}
+
+export async function saveAndSyncBuilder({ shop, builder, admin }) {
+  const savedBuilder = await saveBuilderDraft({
+    shop,
+    builder,
+    admin,
+  });
+
+  console.log("SYNC BUILDER PRODUCT:", savedBuilder.productId);
+
+  const metaobject = await syncBuilderMetaobject({
+    admin,
+    builder: savedBuilder,
+  });
+
+  console.log("SYNC METAOBJECT:", metaobject.id);
+
+  if (savedBuilder.productId) {
+    const metafield = await syncBuilderProductMetafield({
+      admin,
+      productId: savedBuilder.productId,
+      metaobjectId: metaobject.id,
+    });
+
+    console.log("SYNCED PRODUCT METAFIELD:", metafield);
+  }
+
+  return {
+    builder: savedBuilder,
+    metaobject,
+  };
 }

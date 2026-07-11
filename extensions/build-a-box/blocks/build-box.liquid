@@ -1,13 +1,77 @@
-<div id="build-a-box-root">
-  Loading Build a Box...
-</div>
+{% assign builder_metafield = product.metafields["$app"].build_a_box_builder %}
+{% assign builder = builder_metafield.value %}
 
-{{ 'build-box.js' | asset_url | script_tag }}
+{% if builder == blank %}
+  {% assign builder_id = block.settings.builder_id | strip %}
+
+  {% if builder_id != blank %}
+    {% assign builder_handle = 'builder-' | append: builder_id %}
+    {% assign builder = metaobjects["$app:build_a_box_builder"][builder_handle] %}
+  {% endif %}
+{% else %}
+  {% assign builder_id = builder.builder_id.value %}
+  {% assign builder_handle = builder.system.handle %}
+{% endif %}
+
+<div
+  id="build-a-box-root-{{ block.id }}"
+  class="build-a-box-root"
+  data-builder-id="{{ builder_id | escape }}"
+  data-builder-handle="{{ builder_handle | escape }}"
+  data-show-title="{{ block.settings.show_title }}"
+  data-show-images="{{ block.settings.show_images }}"
+  data-button-label="{{ block.settings.button_label | escape }}"
+>
+  {% if builder == blank %}
+    <p>No Build a Box builder is attached.</p>
+
+    {% if block.settings.builder_id == blank %}
+      <small>
+        Attach a builder to this product or enter a Builder ID in the block settings.
+      </small>
+    {% else %}
+      <small>Builder handle: {{ builder_handle }}</small>
+    {% endif %}
+  {% else %}
+    {% if block.settings.show_title %}
+      <h2>{{ builder.name.value }}</h2>
+    {% endif %}
+
+    <p>Builder ID: {{ builder.builder_id.value }}</p>
+    <p>Status: {{ builder.status.value }}</p>
+  {% endif %}
+</div>
 
 {% schema %}
 {
   "name": "Build a Box",
   "target": "section",
-  "settings": []
+  "javascript": "build-box.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "builder_id",
+      "label": "Fallback Builder ID",
+      "info": "Optional. Used only when this product does not have a builder attached."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_title",
+      "label": "Show builder title",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_images",
+      "label": "Show product images",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Add to cart button label",
+      "default": "Add box to cart"
+    }
+  ]
 }
 {% endschema %}

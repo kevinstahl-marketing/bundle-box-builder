@@ -5,7 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import {
   createBuilder,
   getBuilder,
-  saveBuilderDraft,
+  saveAndSyncBuilder,
 } from "../services/builder.server";
 
 import { BUILDER_MODES } from "../services/builderMode";
@@ -38,7 +38,7 @@ export async function action({ request, params }) {
   if (intent === "saveBuilder") {
     const builder = JSON.parse(String(formData.get("builder") || "{}"));
 
-    await saveBuilderDraft({
+    await saveAndSyncBuilder({
       shop: session.shop,
       builder,
       admin,
