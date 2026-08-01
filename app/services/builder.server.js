@@ -99,6 +99,8 @@ async function syncBuilderSteps(
   tx,
   { builderId, steps, resolvedOptionsByStepId },
 ) {
+
+  //removes creates an array of IDs falsey steps
   const existingStepIds = steps.map((step) => step.id).filter(Boolean);
 
   await tx.builderStep.deleteMany({
