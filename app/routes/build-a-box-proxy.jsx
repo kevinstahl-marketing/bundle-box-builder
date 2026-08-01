@@ -1,5 +1,5 @@
 import { authenticate } from "../shopify.server";
-import { getBuilders } from "../services/builder.server";
+import { getBuilders } from "../services/builder/builder.server";
 
 export async function loader({ request }) {
   await authenticate.public.appProxy(request);

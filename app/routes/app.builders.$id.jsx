@@ -6,7 +6,7 @@ import {
   createBuilder,
   getBuilder,
   saveAndSyncBuilder,
-} from "../services/builder.server";
+} from "../services/builder/builder.server";
 
 import { BUILDER_MODES } from "../services/builderMode";
 

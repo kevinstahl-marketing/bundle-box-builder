@@ -7,7 +7,7 @@ import { Link } from "react-router";
 import { useLoaderData } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { getBuilders } from "../services/builder.server";
+import { getBuilders } from "../services/builder/builder.server";
 
 export async function loader({ request }) {
   const { session } = await authenticate.admin(request);
