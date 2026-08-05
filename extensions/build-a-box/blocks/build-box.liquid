@@ -1,3 +1,5 @@
+{% render 'vite-tag', entry: 'theme.jsx' %}
+
 {% assign builder_metafield = product.metafields["$app"].build_a_box_builder %}
 {% assign builder = builder_metafield.value %}
 
@@ -13,16 +15,9 @@
   {% assign builder_handle = builder.system.handle %}
 {% endif %}
 
-<div
-  id="build-a-box-root-{{ block.id }}"
-  class="build-a-box-root"
-  data-builder-id="{{ builder_id | escape }}"
-  data-builder-handle="{{ builder_handle | escape }}"
-  data-show-title="{{ block.settings.show_title }}"
-  data-show-images="{{ block.settings.show_images }}"
-  data-button-label="{{ block.settings.button_label | escape }}"
->
-  {% if builder == blank %}
+{% if builder == blank %}
+
+  <div class="build-a-box-root">
     <p>No Build a Box builder is attached.</p>
 
     {% if block.settings.builder_id == blank %}
@@ -32,21 +27,28 @@
     {% else %}
       <small>Builder handle: {{ builder_handle }}</small>
     {% endif %}
-  {% else %}
-    {% if block.settings.show_title %}
-      <h2>{{ builder.name.value }}</h2>
-    {% endif %}
+  </div>
 
-    <p>Builder ID: {{ builder.builder_id.value }}</p>
-    <p>Status: {{ builder.status.value }}</p>
-  {% endif %}
-</div>
+{% else %}
+
+  <div
+    class="build-a-box-root"
+    data-build-a-box-root
+    data-builder-id="{{ builder.builder_id.value | escape }}"
+    data-builder-handle="{{ builder.system.handle | escape }}"
+    data-show-title="{{ block.settings.show_title }}"
+    data-show-images="{{ block.settings.show_images }}"
+    data-button-label="{{ block.settings.button_label | escape }}"
+  >
+    <!-- React mounts here -->
+  </div>
+
+{% endif %}
 
 {% schema %}
 {
   "name": "Build a Box",
   "target": "section",
-  "javascript": "build-box.js",
   "settings": [
     {
       "type": "text",
