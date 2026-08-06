@@ -39,12 +39,12 @@ if (host === "localhost") {
 
 export default defineConfig({
   server: {
-    allowedHosts: [host],
-    cors: {
-      preflightContinue: true,
-    },
-    port: Number(process.env.PORT || 3000),
-    hmr: hmrConfig,
+    //allowedHosts: [host],
+    //cors: {
+    //  preflightContinue: true,
+    //},
+    //port: Number(process.env.PORT || 3000),
+    //hmr: hmrConfig,
     fs: {
       // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
       allow: ["app", "node_modules", "frontend"],
@@ -55,6 +55,7 @@ export default defineConfig({
     tsconfigPaths(),
     shopify({
       themeRoot: "extensions/build-a-box",
+      tunnel: true,
     }),
   ],
   build: {
