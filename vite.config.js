@@ -2,8 +2,6 @@ import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-import shopify from "vite-plugin-shopify";
-
 // Related: https://github.com/remix-run/remix/issues/2835#issuecomment-1144102176
 // Replace the HOST env var with SHOPIFY_APP_URL so that it doesn't break the Vite server.
 // The CLI will eventually stop passing in HOST,
@@ -39,25 +37,18 @@ if (host === "localhost") {
 
 export default defineConfig({
   server: {
-    //allowedHosts: [host],
-    //cors: {
-    //  preflightContinue: true,
-    //},
-    //port: Number(process.env.PORT || 3000),
-    //hmr: hmrConfig,
+    allowedHosts: [host],
+    cors: {
+      preflightContinue: true,
+    },
+    port: Number(process.env.PORT || 3000),
+    hmr: hmrConfig,
     fs: {
       // See https://vitejs.dev/config/server-options.html#server-fs-allow for more information
-      allow: ["app", "node_modules", "frontend"],
+      allow: ["app", "node_modules"],
     },
   },
-  plugins: [
-    reactRouter(),
-    tsconfigPaths(),
-    shopify({
-      themeRoot: "extensions/build-a-box",
-      tunnel: true,
-    }),
-  ],
+  plugins: [reactRouter(), tsconfigPaths()],
   build: {
     assetsInlineLimit: 0,
   },
