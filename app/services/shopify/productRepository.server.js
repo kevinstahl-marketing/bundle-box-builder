@@ -1,13 +1,13 @@
 
-async function getAllProducts(admin) {
+export async function getAllProducts(admin) {
   return getProductsByQuery(admin, "");
 }
 
-async function getProductsByTag(admin, tag) {
+export async function getProductsByTag(admin, tag) {
   return getProductsByQuery(admin, `tag:${JSON.stringify(tag)}`);
 }
 
-async function getProductsByCollection(admin, collectionId) {
+export async function getProductsByCollection(admin, collectionId) {
   const response = await admin.graphql(
     `#graphql
     query CollectionProducts($id: ID!) {
